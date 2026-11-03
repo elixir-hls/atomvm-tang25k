@@ -1,0 +1,53 @@
+diff --git a/src/platforms/zephyr/Kconfig.atomvm b/src/platforms/zephyr/Kconfig.atomvm
+index 44cdbdfb..c01cdf17 100644
+--- a/src/platforms/zephyr/Kconfig.atomvm
++++ b/src/platforms/zephyr/Kconfig.atomvm
+@@ -71,6 +71,18 @@ config AVM_APP_SIZE
+     help
+       Size of the region at AVM_APP_ADDRESS. 0 means up to the end of flash.
+ 
++config AVM_LIB_ADDRESS
++    hex "Address of a library AVM pack"
++    default 0x0
++    help
++      Memory-mapped address of an AVM pack loaded next to the application,
++      typically atomvmlib, so that the application pack only holds its own
++      modules. Modules are looked up in the application pack first. 0 disables.
++
++config AVM_LIB_SIZE
++    hex "Maximum size of the library AVM pack"
++    default 0x100000
++
+ endmenu
+ 
+ # Override defaults of Zephyr options when AVM_ENABLE_WIFI is active
+diff --git a/src/platforms/zephyr/src/main.c b/src/platforms/zephyr/src/main.c
+index 2a90892b..86c78b85 100644
+--- a/src/platforms/zephyr/src/main.c
++++ b/src/platforms/zephyr/src/main.c
+@@ -132,6 +132,25 @@ int main()
+     avmpack_data->base.in_use = true;
+     synclist_append(&glb->avmpack_data, &avmpack_data->base.avmpack_head);
+ 
++#if CONFIG_AVM_LIB_ADDRESS != 0
++    // Library pack (e.g. atomvmlib) kept apart from the application, searched after it
++    const void *lib_avm = (const void *) CONFIG_AVM_LIB_ADDRESS;
++    if (avmpack_is_valid(lib_avm, CONFIG_AVM_LIB_SIZE)) {
++        struct ConstAVMPack *lib_avmpack_data = malloc(sizeof(struct ConstAVMPack));
++        if (IS_NULL_PTR(lib_avmpack_data)) {
++            AVM_LOGE(TAG, "Memory error: Cannot allocate AVMPackData.");
++            AVM_ABORT();
++        }
++        avmpack_data_init(&lib_avmpack_data->base, &const_avm_pack_info);
++        lib_avmpack_data->base.data = lib_avm;
++        lib_avmpack_data->base.in_use = true;
++        synclist_append(&glb->avmpack_data, &lib_avmpack_data->base.avmpack_head);
++        AVM_LOGI(TAG, "Library pack at %p", lib_avm);
++    } else {
++        AVM_LOGW(TAG, "No valid library AVM pack at %p", lib_avm);
++    }
++#endif
++
+     Module *mod = module_new_from_iff_binary(glb, startup_beam, startup_beam_size);
+     globalcontext_insert_module(glb, mod);
+     Context *ctx = context_new(glb);

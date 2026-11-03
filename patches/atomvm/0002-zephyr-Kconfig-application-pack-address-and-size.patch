@@ -1,0 +1,53 @@
+diff --git a/src/platforms/zephyr/Kconfig.atomvm b/src/platforms/zephyr/Kconfig.atomvm
+index ce4ca96c..44cdbdfb 100644
+--- a/src/platforms/zephyr/Kconfig.atomvm
++++ b/src/platforms/zephyr/Kconfig.atomvm
+@@ -56,6 +56,21 @@ config AVM_ENABLE_CRYPTO
+     help
+       Enable mbedTLS and PSA Cryptography support for AtomVM.
+ 
++config AVM_APP_ADDRESS
++    hex "Address of the application AVM pack"
++    default 0x0
++    help
++      Memory-mapped address AtomVM reads the application AVM pack from, for
++      boards where it is not at a fixed offset of the internal flash (e.g. an
++      SoC that loads it into RAM or maps an external SPI flash). 0 derives the
++      address from the flash size.
++
++config AVM_APP_SIZE
++    hex "Maximum size of the application AVM pack"
++    default 0x0
++    help
++      Size of the region at AVM_APP_ADDRESS. 0 means up to the end of flash.
++
+ endmenu
+ 
+ # Override defaults of Zephyr options when AVM_ENABLE_WIFI is active
+diff --git a/src/platforms/zephyr/src/lib/avm_devcfg.h b/src/platforms/zephyr/src/lib/avm_devcfg.h
+index e1169f31..b13bf115 100644
+--- a/src/platforms/zephyr/src/lib/avm_devcfg.h
++++ b/src/platforms/zephyr/src/lib/avm_devcfg.h
+@@ -36,7 +36,9 @@
+ #define AVM_FLASH_SIZE_BYTES (CONFIG_FLASH_SIZE * 1024U)
+ #endif
+ 
+-#if (AVM_FLASH_SIZE_BYTES <= (512U * 1024U))
++#if CONFIG_AVM_APP_ADDRESS != 0
++#define AVM_APP_ADDRESS (CONFIG_AVM_APP_ADDRESS)
++#elif (AVM_FLASH_SIZE_BYTES <= (512U * 1024U))
+ #define AVM_APP_ADDRESS ((CONFIG_FLASH_BASE_ADDRESS) + 0x60000U)
+ #elif (AVM_FLASH_SIZE_BYTES <= (1024U * 1024U))
+ #define AVM_APP_ADDRESS ((CONFIG_FLASH_BASE_ADDRESS) + 0x80000U)
+@@ -44,7 +46,10 @@
+ #define AVM_APP_ADDRESS ((CONFIG_FLASH_BASE_ADDRESS) + 0x100000U)
+ #endif
+ 
+-
++#if CONFIG_AVM_APP_SIZE != 0
++#define CFG_FLASH_END ((uint32_t) (AVM_APP_ADDRESS + CONFIG_AVM_APP_SIZE))
++#else
+ #define CFG_FLASH_END ((uint32_t) ((CONFIG_FLASH_BASE_ADDRESS) + AVM_FLASH_SIZE_BYTES))
++#endif
+ 
+ #endif /* _AVM_DEVCFG_H_ */

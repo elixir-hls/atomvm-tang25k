@@ -1,0 +1,79 @@
+diff --git a/src/platforms/zephyr/cmake/AtomVMZephyrApp.cmake b/src/platforms/zephyr/cmake/AtomVMZephyrApp.cmake
+index 574c040b..1f2f6335 100644
+--- a/src/platforms/zephyr/cmake/AtomVMZephyrApp.cmake
++++ b/src/platforms/zephyr/cmake/AtomVMZephyrApp.cmake
+@@ -33,6 +33,7 @@ option(AVM_ZEPHYR_EXPERIMENTAL_SMP "Enable experimental AtomVM SMP support on Ze
+ option(AVM_ZEPHYR_BOOT_TEST "Boot AtomVM far enough to exercise Zephyr platform initialization" OFF)
+ option(AVM_ZEPHYR_TEST_AVM "Use an embedded test AVM pack instead of a flashed application" OFF)
+ option(AVM_ZEPHYR_TEST_EXIT "Exit the Zephyr application when the AtomVM application returns" OFF)
++option(AVM_ZEPHYR_PRECOMPILED "Execute precompiled (AOT) native code found in AVM packs" OFF)
+ 
+ if (AVM_ZEPHYR_EXPERIMENTAL_SMP)
+     set(AVM_DISABLE_SMP OFF CACHE BOOL "Disable SMP" FORCE)
+@@ -43,7 +44,11 @@ else()
+     add_compile_definitions(AVM_NO_SMP)
+ endif()
+ set(AVM_DISABLE_TASK_DRIVER OFF CACHE BOOL "Disable Task Driver" FORCE)
+-add_compile_definitions(AVM_NO_JIT)
++if (AVM_ZEPHYR_PRECOMPILED)
++    set(AVM_ENABLE_PRECOMPILED ON CACHE BOOL "Enable execution of precompiled code" FORCE)
++else()
++    add_compile_definitions(AVM_NO_JIT)
++endif()
+ add_compile_definitions(_GNU_SOURCE)
+ add_compile_definitions(_POSIX_C_SOURCE=200809L)
+ if (NOT AVM_DISABLE_TASK_DRIVER)
+diff --git a/src/platforms/zephyr/src/lib/sys.c b/src/platforms/zephyr/src/lib/sys.c
+index 914fb707..412103dd 100644
+--- a/src/platforms/zephyr/src/lib/sys.c
++++ b/src/platforms/zephyr/src/lib/sys.c
+@@ -809,3 +809,49 @@ void sys_mbedtls_ctr_drbg_context_unlock(GlobalContext *global)
+     UNUSED(global);
+ }
+ #endif
++
++#ifndef AVM_NO_JIT
++// Precompiled (AOT) native code is executed in place from the AVM pack.
++ModuleNativeEntryPoint sys_map_native_code(const uint8_t *code, size_t code_size)
++{
++    UNUSED(code_size);
++#if defined(__riscv)
++    // The pack may have been copied to RAM after boot: make the instruction fetch see it
++    __asm__ volatile("fence.i" ::: "memory");
++#endif
++    return (ModuleNativeEntryPoint) code;
++}
++
++void sys_release_native_code(ModuleNativeEntryPoint entry_point)
++{
++    // Native code points into the AVM pack; nothing to free
++    UNUSED(entry_point);
++}
++
++bool sys_get_cache_native_code(GlobalContext *global, Module *mod, uint16_t *version, ModuleNativeEntryPoint *entry_point, uint32_t *labels)
++{
++    UNUSED(global);
++    UNUSED(mod);
++    UNUSED(version);
++    UNUSED(entry_point);
++    UNUSED(labels);
++    return false;
++}
++
++void sys_set_cache_native_code(GlobalContext *global, Module *mod, uint16_t version, ModuleNativeEntryPoint entry_point, uint32_t labels)
++{
++    UNUSED(global);
++    UNUSED(mod);
++    UNUSED(version);
++    UNUSED(entry_point);
++    UNUSED(labels);
++}
++
++// No JIT stream on this port: only precompiled code is executed
++ModuleNativeEntryPoint jit_stream_entry_point(Context *ctx, term jit_stream)
++{
++    UNUSED(ctx);
++    UNUSED(jit_stream);
++    return NULL;
++}
++#endif

@@ -1,0 +1,26 @@
+# AtomVM's own Kconfig menu, from the pinned checkout (ATOMVM_DIR, set by scripts/build_atomvm.sh)
+mainmenu "AtomVM on Tang Primer 25K"
+
+source "$(ATOMVM_DIR)/src/platforms/zephyr/Kconfig.atomvm"
+
+menu "Tang Primer 25K AVM loader"
+
+config TANG_AVM_STAGING_ADDRESS
+    hex "SDRAM address scripts/load_app.py loads the application AVM pack to"
+    default 0x41c00000
+
+config TANG_AVM_FLASH_LIB_ADDRESS
+    hex "Memory-mapped SPI flash address of the library AVM pack"
+    default 0xa00000
+    help
+      SPI flash offset 0x200000 (scripts/flash.sh) in the 0x800000 flash window.
+
+config TANG_AVM_FLASH_APP_ADDRESS
+    hex "Memory-mapped SPI flash address of the application AVM pack"
+    default 0xe00000
+    help
+      SPI flash offset 0x600000 (scripts/flash.sh) in the 0x800000 flash window.
+
+endmenu
+
+source "Kconfig.zephyr"

@@ -1,0 +1,5 @@
+/* SDRAM map (README): Zephyr + malloc arena get the first 24 MB, then the AVM pack slots
+ * 0x41800000 library (4 MB), 0x41c00000 staging (2 MB), 0x41e00000 application (2 MB). */
+&ram0 {
+    reg = <0x40000000 0x1800000>;
+};
