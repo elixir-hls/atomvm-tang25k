@@ -78,6 +78,12 @@ AtomVM has no LiteX port. Options considered:
   checked by eye on the board.
 - S4 UART input: `io:get_line` throws `no_group_leader` (the port starts no group leader);
   `uart:open([])` on the console UART reads lines fine (`erl/echo.erl`).
+- Messages from interrupts: `patches/atomvm/0005` makes `sys_signal` wake the scheduler without
+  sockets (it wrote an eventfd nobody polls, so a message waited for the next timer), 0006 keeps
+  the messages sent from tasks in order (the queue is a stack, and the scheduler emptied it from
+  the newest). An interrupt connected in a NIF needs an enabled devicetree node with its
+  number, or Zephyr's interrupt controller never calls its handler
+  (`scripts/gen_zephyr_overlay.sh` adds one per SoC interrupt no driver takes).
 - S4 precompiled code (`patches/atomvm/0004`): AtomVM runs riscv32 native code from the packs.
   atomvmlib precompiled is 2.8 MB (0.5 MB BEAM) -> flash layout VM 0x100000 / lib 0x200000 /
   app 0x600000.

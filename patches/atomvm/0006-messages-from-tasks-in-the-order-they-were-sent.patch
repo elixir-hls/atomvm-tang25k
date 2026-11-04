@@ -1,0 +1,18 @@
+--- a/src/libAtomVM/globalcontext.c
++++ b/src/libAtomVM/globalcontext.c
+@@ -524,6 +524,15 @@
+     if (current) {
+         while (!ATOMIC_COMPARE_EXCHANGE_WEAK_PTR(&glb->message_queue, &current, NULL)) {
+         };
++        // The list is a stack: oldest last. Messages go to the mailboxes in the order they were sent.
++        struct MessageQueueItem *oldest_first = NULL;
++        while (current) {
++            struct MessageQueueItem *next = current->next;
++            current->next = oldest_first;
++            oldest_first = current;
++            current = next;
++        }
++        current = oldest_first;
+         (void) synclist_rdlock(&glb->processes_table);
+         while (current) {
+             Context *context = globalcontext_get_process_nolock(glb, current->process_id);

@@ -1,0 +1,34 @@
+--- a/src/platforms/zephyr/src/lib/sys.c
++++ b/src/platforms/zephyr/src/lib/sys.c
+@@ -158,9 +158,16 @@
+     }
+ }
+ 
++#if !defined(CONFIG_NET_SOCKETS)
++static K_SEM_DEFINE(sys_signal_sem, 0, 1);
++#endif
++
+ void sys_signal(GlobalContext *glb)
+ {
+-#if defined(CONFIG_EVENTFD)
++#if !defined(CONFIG_NET_SOCKETS)
++    UNUSED(glb);
++    k_sem_give(&sys_signal_sem);
++#elif defined(CONFIG_EVENTFD)
+     struct ZephyrPlatformData *platform = glb->platform_data;
+     if (platform && platform->signal_fd >= 0) {
+         eventfd_t val = 1;
+@@ -318,8 +325,11 @@
+         select_event_notify(fds[fd_index].fd, is_read, is_write, glb);
+     }
+ #else
+-    if (timeout_ms > 0) {
+-        k_msleep(timeout_ms);
++    /* Without sockets there is no eventfd to poll: wait on a semaphore sys_signal gives, so that
++     * a message from a task or an interrupt wakes the scheduler at once. Waiting "for ever" is
++     * bounded, in case something depends on the scheduler coming round without a signal. */
++    if (timeout_ms != SYS_POLL_EVENTS_DO_NOT_WAIT) {
++        k_sem_take(&sys_signal_sem, K_MSEC(timeout_ms < 0 ? 100 : timeout_ms));
+     }
+ #endif
+ }

@@ -90,7 +90,8 @@ either `scripts/flash.sh lib` (atomvmlib-zephyr-native.avm, every module precomp
 ### GPIO and UART
 
 `{0, N}` are the Dock LEDs, `{1, N}` the user buttons (edge interrupts; the input reads 0
-while pressed). See `erl/gpio_demo.erl`. Console input: `io:get_line` needs a group leader,
+while pressed). See `erl/gpio_demo.erl`. `AtomVMSoC(with_dock_gpio=False)` leaves those pins to the
+application's circuits; AtomVM's `gpio` module then has no controllers. Console input: `io:get_line` needs a group leader,
 which this port does not start; read the console UART with `uart:open([])` (`erl/echo.erl`).
 
 ### LiteX fixes

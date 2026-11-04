@@ -41,13 +41,17 @@ FLASH_APP_OFFSET = 0x100000
 
 
 class AtomVMSoC(target.BaseSoC):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, with_dock_gpio=True, **kwargs):
+        """with_dock_gpio: the Dock's LEDs and buttons for AtomVM's gpio module; False leaves
+        their pins to the application's circuits."""
         for k, v in DEFAULTS.items():
             kwargs[k] = v
+        kwargs["with_led_chaser"] = with_dock_gpio
         super().__init__(*args, **kwargs)
-        # Dock user buttons with edge interrupts (Erlang gpio:set_int through Zephyr's gpio_litex)
-        self.buttons = GPIOIn(pads=~self.platform.request_all("btn_n"), with_irq=True)
-        self.irq.add("buttons", use_loc_if_exists=True)
+        if with_dock_gpio:
+            # Dock user buttons with edge interrupts (Erlang gpio:set_int through Zephyr's gpio_litex)
+            self.buttons = GPIOIn(pads=~self.platform.request_all("btn_n"), with_irq=True)
+            self.irq.add("buttons", use_loc_if_exists=True)
         self.add_constant("FLASH_BOOT_ADDRESS",
                           self.bus.regions["spiflash"].origin + FLASH_APP_OFFSET)
 

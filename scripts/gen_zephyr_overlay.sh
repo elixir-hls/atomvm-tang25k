@@ -22,7 +22,23 @@ cat >> "$OUT" <<EOT
 &pwm0 { status = "disabled"; };
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
-
+EOT
+# Zephyr's interrupt controller calls a handler only for an interrupt number that some enabled
+# devicetree node has: without one, an interrupt connected in the application (IRQ_CONNECT in a
+# NIF) is never served and fires for ever. So a node for each interrupt of the SoC that no
+# Zephyr driver here takes.
+python3 - "$CSR_JSON" >> "$OUT" <<'PY'
+import json, sys
+constants = json.load(open(sys.argv[1]))["constants"]
+for k, v in sorted(constants.items()):
+    name = k[:-len("_interrupt")] if k.endswith("_interrupt") else None
+    if name and v is not None and name not in ("uart", "timer0", "buttons"):
+        print(f"/ {{ irq_{name} {{ interrupt-parent = <&intc0>; interrupts = <{v} 1>; status = \"okay\"; }}; }};")
+PY
+# The Dock's LEDs and buttons, unless the SoC left their pins to the application's circuits
+# (AtomVMSoC with_dock_gpio=False): then AtomVM's gpio module has no controllers here
+if python3 -c "import json,sys; sys.exit('leds_out' not in json.load(open('$CSR_JSON'))['csr_registers'])"; then
+cat >> "$OUT" <<EOT
 &gpio_out {
     reg = <$(csr leds) 0x4>;
     reg-names = "out";
@@ -66,4 +82,10 @@ gpio1: &gpio_in { };
     };
 };
 EOT
+else
+cat >> "$OUT" <<EOT
+&gpio_out { status = "disabled"; };
+&gpio_in { status = "disabled"; };
+EOT
+fi
 echo "Wrote $OUT"
