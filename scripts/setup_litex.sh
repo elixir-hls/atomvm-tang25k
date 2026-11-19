@@ -17,5 +17,8 @@ fi
 mkdir -p "$LITEX_DEPS"
 cp "$ROOT/litex_setup.py" "$ROOT/litex_repos.py" "$LITEX_DEPS/"
 cd "$LITEX_DEPS"
-# --dev keeps litex_setup.py from fetching a newer litex_repos.py
+# --dev keeps litex_setup.py from fetching a newer litex_repos.py, but also turns the clones'
+# URLs into git@github.com: (SSH): they are turned back into https here, for this run only, so no
+# SSH key for GitHub is needed
+export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=url.https://github.com/.insteadOf GIT_CONFIG_VALUE_0=git@github.com:
 "$PY" litex_setup.py --init --install $MODE --dev "$@"
