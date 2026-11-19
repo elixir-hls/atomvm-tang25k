@@ -113,6 +113,14 @@ docs/design.md). Spawn processes that build large terms with
 garbage-collects every few allocations once a term grows. Integers above 2^27 are boxed on
 this 32-bit target and are much slower than small integers.
 
+## With Elixir HLS
+
+An Elixir HLS application has this base through its target,
+[atomvm-tang25k-hls](https://github.com/elixir-hls/atomvm-tang25k-hls), as the Hex package
+`atomvm_tang25k`. `mix ehls.setup` in the application sets a copy of it up once for the machine
+(the three setup scripts above, in `~/.cache/ehls/atomvm_tang25k-<version>`), shared by the
+applications of that version.
+
 ## Layout
 
 - `gateware/soc.py` — the LiteX SoC
