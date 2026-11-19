@@ -5,3 +5,4 @@ __pycache__/
 *.pyc
 ext/
 /_build/
+venv/

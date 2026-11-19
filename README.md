@@ -51,7 +51,7 @@ A workspace elsewhere than `~/zephyrproject` is named by `ZEPHYR_WORKSPACE`.
 ## Build and run
 
 ```sh
-scripts/setup_litex.sh        # pinned LiteX into deps/ (or: ln -s <same-commit workspace> deps)
+scripts/setup_litex.sh        # pinned LiteX into deps/ (or: ln -s <same-commit workspace> deps; --venv: in venv/)
 scripts/build_soc.sh          # gateware -> build/soc/
 scripts/build_app.sh          # plain Zephyr app (default apps/hello_world) -> build/app_<name>/
 scripts/run.sh                # load the bitstream to SRAM and serial-boot that app
@@ -119,7 +119,8 @@ An Elixir HLS application has this base through its target,
 [atomvm-tang25k-hls](https://github.com/elixir-hls/atomvm-tang25k-hls), as the Hex package
 `atomvm_tang25k`. `mix ehls.setup` in the application sets a copy of it up once for the machine
 (the three setup scripts above, in `~/.cache/ehls/atomvm_tang25k-<version>`), shared by the
-applications of that version.
+applications of that version; its LiteX goes into a virtual environment there
+(`setup_litex.sh --venv`), not into the user's Python.
 
 ## Layout
 

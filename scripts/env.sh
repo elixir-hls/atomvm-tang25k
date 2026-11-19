@@ -1,6 +1,11 @@
 # Common environment for the scripts (sourced).
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LITEX_DEPS="${LITEX_DEPS:-$ROOT/deps}"          # pinned LiteX workspace (scripts/setup_litex.sh)
+# the Python that has LiteX: venv/ when setup_litex.sh --venv made one, else the user's python3
+if [ -z "${LITEX_PYTHON:-}" ]; then
+    if [ -x "$ROOT/venv/bin/python3" ]; then LITEX_PYTHON="$ROOT/venv/bin/python3"; else LITEX_PYTHON=python3; fi
+fi
+export LITEX_PYTHON
 # Gowin IDE (gw_sh, which LiteX runs to build the gateware): GOWIN_HOME is the directory it
 # is installed in (developed with Gowin V1.9.11.03 Education); the scripts that build a SoC
 # stop without it (require_gowin)
