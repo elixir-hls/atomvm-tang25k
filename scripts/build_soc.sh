@@ -4,5 +4,5 @@
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
 require_gowin
-python3 "$ROOT/gateware/soc.py" --build --output-dir "$SOC_DIR" "$@"
+"$LITEX_PYTHON" "$ROOT/gateware/soc.py" --build --output-dir "$SOC_DIR" "$@"
 "$ROOT/scripts/report.sh" "$SOC_DIR"
